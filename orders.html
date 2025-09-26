@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Orders (Admin)</title>
+  <link rel="stylesheet" href="css/main.css"><!-- optional -->
+  <style>
+    .container{max-width:1100px;margin:24px auto;padding:0 12px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+    .badge{display:inline-block;padding:2px 8px;border:1px solid #999;border-radius:12px;font-size:12px}
+    .btn{cursor:pointer;border:1px solid #222;padding:6px 10px;border-radius:4px;background:#fff}
+    .row-actions{display:flex;gap:8px}
+    pre{background:#f7f7f7;padding:10px;border-radius:6px;overflow:auto}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin:12px 0}
+    .muted{color:#777}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Orders</h1>
+    <p class="muted">LocalStorage based demo. Is browser me place huay orders yahan dikhain ge.</p>
+
+    <div class="topbar">
+      <div>
+        <button id="exportCsv" class="btn">Export CSV</button>
+        <button id="clearOrders" class="btn">Clear All (demo)</button>
+      </div>
+      <a class="btn" href="index.html">Back to site</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>City</th>
+          <th>Phone</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="orders-body">
+        <!-- rows injected -->
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:24px">Details</h3>
+    <pre id="detail" class="hidden"></pre>
+  </div>
+
+  <script>
+    // --- simple soft "lock" so public users na dekhein (optional) ---
+    // halka password prompt, sirf hiding purpose (real security nahi)
+    const SOFT_PASSWORD = ""; // chahein to yahan 'coffee123' set karein
+    if (SOFT_PASSWORD) {
+      const ans = prompt("Enter admin pass:");
+      if (ans !== SOFT_PASSWORD) {
+        document.body.innerHTML = "<p>Access denied</p>";
+        throw new Error("Denied");
+      }
+    }
+
+    function money(cents){ return (cents/100).toFixed(2); }
+    function getOrders(){ return JSON.parse(localStorage.getItem('orders') || '[]'); }
+    function saveOrders(x){ localStorage.setItem('orders', JSON.stringify(x)); }
+
+    function render(){
+      const body = document.getElementById('orders-body');
+      const detail = document.getElementById('detail');
+      const orders = getOrders().sort((a,b)=> (a.placed_at < b.placed_at ? 1 : -1));
+      if (!orders.length){
+        body.innerHTML = '<tr><td colspan="8">No orders yet.</td></tr>';
+        detail.classList.add('hidden');
+        return;
+      }
+      body.innerHTML = orders.map(o => `
+        <tr data-id="${o.id}">
+          <td>${o.id}</td>
+          <td>${new Date(o.placed_at).toLocaleString()}</td>
+          <td>${o.customer.name}</td>
+          <td>${o.customer.city}</td>
+          <td>${o.customer.phone}</td>
+          <td>$${money(o.totals.grand_cents)}</td>
+          <td><span class="badge">${o.status || 'placed'}</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="btn btn-view">View</button>
+              <button class="btn btn-mark">Mark Delivered</button>
+              <button class="btn btn-delete">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // actions
+    document.addEventListener('click', e=>{
+      if (e.target.classList.contains('btn-view')){
+        const id = e.target.closest('tr').dataset.id;
+        const o = getOrders().find(x=>x.id===id);
+        const pre = document.getElementById('detail');
+        pre.textContent = JSON.stringify(o, null, 2);
+        pre.classList.remove('hidden');
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }
+      if (e.target.classList.contains('btn-mark')){
+        const id = e.target.closest('tr').dataset.id;
+        const list = getOrders();
+        const o = list.find(x=>x.id===id);
+        if (o){ o.status = 'delivered'; saveOrders(list); render(); }
+      }
+      if (e.target.classList.contains('btn-delete')){
+        const id = e.target.closest('tr').dataset.id;
+        const list = getOrders().filter(x=>x.id!==id);
+        saveOrders(list); render();
+      }
+    });
+
+    // export CSV
+    document.getElementById('exportCsv').addEventListener('click', ()=>{
+      const rows = getOrders();
+      if (!rows.length) return alert('No orders to export');
+      const header = ['id','placed_at','name','phone','email','city','postal','address','total_cents','status'];
+      const csv = [header.join(',')].concat(rows.map(o=>{
+        return [
+          o.id,
+          o.placed_at,
+          `"${o.customer.name}"`,
+          `"${o.customer.phone}"`,
+          `"${o.customer.email||''}"`,
+          `"${o.customer.city}"`,
+          `"${o.customer.postal}"`,
+          `"${(o.customer.address||'').replace(/\n/g,' ')}"`,
+          o.totals.grand_cents,
+          o.status||'placed'
+        ].join(',');
+      })).join('\n');
+      const blob = new Blob([csv], {type: 'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'orders.csv'; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // clear all (demo)
+    document.getElementById('clearOrders').addEventListener('click', ()=>{
+      if (confirm('Clear all orders?')){ localStorage.removeItem('orders'); render(); }
+    });
+
+    render();
+  </script>
+</body>
+</html>

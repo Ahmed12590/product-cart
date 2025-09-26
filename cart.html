@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><title>Cart</title>
+  <link rel="stylesheet" href="css/main.css"><!-- optional -->
+  <style>
+    table{width:100%;border-collapse:collapse}
+    td,th{border:1px solid #ddd;padding:8px}
+    .btn{cursor:pointer}
+  </style>
+</head>
+<body>
+  <h1>Your Cart</h1>
+  <p><a href="index.html">← Continue shopping</a></p>
+
+  <table>
+    <thead>
+      <tr><th>Product</th><th>Price</th><th>Qty</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="cart-body"></tbody>
+  </table>
+
+ <p>Total: $<span id="cart-total">0.00</span></p>
+
+<p><a class="btn" href="checkout.html">Proceed to Checkout</a></p>
+
+<script src="js/cart.js"></script>
+<script>
+  renderCartTable('#cart-body','#cart-total');
+</script>
+
+
+  <!-- PayPal Buttons mount point -->
+  <div id="paypal-button-container"></div>
+
+  <!-- Your cart logic -->
+  <script src="js/cart.js"></script>
+  <script>
+    // render table from localStorage
+    renderCartTable('#cart-body','#cart-total');
+  </script>
+
+  <!-- PayPal JS SDK -->
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD"></script>
+  <script>
+    function cartTotal(){
+      const c = JSON.parse(localStorage.getItem('cart') || '[]');
+      const cents = c.reduce((s,i)=>s + i.price_cents*i.qty, 0);
+      return (cents/100).toFixed(2); // "49.00"
+    }
+
+    paypal.Buttons({
+      createOrder: function(data, actions) {
+        const value = cartTotal();
+        if (Number(value) <= 0) {
+          alert('Cart is empty');
+          return;
+        }
+        return actions.order.create({
+          purchase_units: [{ amount: { value } }]
+        });
+      },
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          alert('Thanks ' + details.payer.name.given_name + ', payment completed.');
+          localStorage.removeItem('cart'); // clear cart
+          window.location = 'success.html';
+        });
+      },
+      onError: function(err) {
+        console.error(err);
+        alert('Payment error');
+      }
+    }).render('#paypal-button-container');
+  </script>
+</body>
+</html>

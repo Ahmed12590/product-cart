@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><title>Checkout</title>
+  <link rel="stylesheet" href="css/main.css"><!-- your theme css if any -->
+  <style>
+    .container{max-width:1000px;margin:24px auto;padding:0 12px}
+    .grid{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+    label{display:block;margin:8px 0 4px}
+    input,textarea,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:4px}
+    .card{border:1px solid #eee;padding:16px;border-radius:6px}
+    .btn{display:inline-block;padding:10px 16px;border:1px solid #222;border-radius:4px;text-decoration:none;cursor:pointer}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid #eee}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Checkout</h1>
+    <p><a href="cart.html">← Back to Cart</a></p>
+
+    <div class="grid">
+      <!-- Left: form -->
+      <form id="checkout-form" class="card">
+        <h3>Shipping details</h3>
+        <label>Full name</label>
+        <input type="text" name="name" required>
+
+        <label>Phone</label>
+        <input type="tel" name="phone" required>
+
+        <label>Email <small>(optional)</small></label>
+        <input type="email" name="email">
+
+        <label>Address</label>
+        <textarea name="address" rows="3" required></textarea>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label>City</label>
+            <input type="text" name="city" required>
+          </div>
+          <div>
+            <label>Postal code</label>
+            <input type="text" name="postal" required>
+          </div>
+        </div>
+
+        <label>Notes <small>(optional)</small></label>
+        <textarea name="notes" rows="2"></textarea>
+
+        <h3 style="margin-top:16px">Payment method</h3>
+        <label style="display:flex;align-items:center;gap:8px">
+          <input type="radio" name="payment" value="cod" checked>
+          Cash on Delivery
+        </label>
+
+        <button type="submit" class="btn" style="margin-top:16px">Place Order</button>
+      </form>
+
+      <!-- Right: summary -->
+      <div class="card">
+        <h3>Order summary</h3>
+        <table>
+          <thead><tr><th>Item</th><th style="text-align:right">Subtotal</th></tr></thead>
+          <tbody id="sum-body"></tbody>
+          <tfoot>
+            <tr><td>Items total</td><td style="text-align:right">$<span id="sum-items">0.00</span></td></tr>
+            <tr><td>Shipping</td><td style="text-align:right">$<span id="sum-ship">0.00</span></td></tr>
+            <tr><td><strong>Grand total</strong></td><td style="text-align:right"><strong>$<span id="sum-total">0.00</span></strong></td></tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/cart.js"></script>
+  <script src="js/checkout.js"></script>
+</body>
+</html>
